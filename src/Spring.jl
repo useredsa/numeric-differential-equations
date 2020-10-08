@@ -4,27 +4,43 @@ using Revise
 
 includet("IterativeMethods.jl")
 includet("InternalArray.jl")
-IArray = InternalArray
-
 
 # Definitions -----------------------------------------------------------------------------
 
 # We take the reference system to be the position of the spring in rest.
 # That is, for the one dimensional case: (l, 0).
-struct ProblemDefinitions
-    t0 # Initial time
-    p0 # Initial position
-    v0 # Initial speed
 
-    m # Mass
-    k # Spring constant
-    b # Friction constant
-    A # External force amplitude
-    ω # External force angular speed
-    ProblemDefinitions(; t0 = 0, p0, v0, m, k, b = 0, A = 0, ω = 0) = new(t0, p0, v0, m, k, b, A, ω)
+"""
+    SpringProblem
+    
+Contains the parameters associated with a typical spring problem.
+
+# Fields
+- `t0`: Initial time of the problem (defaults to 0)
+- `p0`: Initial position
+- `x0`: Initial speed
+
+- `m`: Mass of the object
+- `k`: Spring's constant
+- `b`: Friction constant
+- `A`: External force amplitude
+- `ω`: External force angular speed
+"""
+struct SpringProblem
+    t0
+    p0
+    v0
+
+    m
+    k
+    b
+    A
+    ω
+    
+    SpringProblem(; t0 = 0, p0, v0, m, k, b = 0, A = 0, ω = 0) = new(t0, p0, v0, m, k, b, A, ω)
 end
 
-function eulermethod_spring(prob::ProblemDefinitions, step, nit)
+function eulermethod(prob::SpringProblem, step, nit)
     # We ought to transform the equation to a  differential equation of order one,
     # for which we write x = [position; speed].
     # That is, the variable x will represent the solution rather than the position.

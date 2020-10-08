@@ -9,7 +9,7 @@ const step = 1e-3
 const nit = Int(40/step)  # round to avoid small rounding errors
 
 # We define a problem with no friction
-prob = SpringProblem(p0 = 1.5, v0 = 0, m = 1, k = 1.5)
+prob = SpringProblem(p0 = 0.8, v0 = 0, m = 1, k = 1.5)
 
 x = eulermethod(prob, step, nit)
 
@@ -39,7 +39,7 @@ end
 
 # 6. Using this frequency to force it -----------------------------------------------------
 
-cond_prob = SpringProblem(p0 = 1.5, v0 = 0, m = 1, k = 1.5, A = 1, ω = 2*π*freq)
+cond_prob = SpringProblem(p0 = 0.8, v0 = 0, m = 1, k = 1.5, A = 1, ω = 2*π*freq)
 
 y = eulermethod(cond_prob, step, nit)
 plot!(timeline, IArray(y, 1), label = "conditioned")

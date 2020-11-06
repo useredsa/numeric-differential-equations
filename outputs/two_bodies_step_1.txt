@@ -1,0 +1,32 @@
+two_bodies> 
+	Method euler_step
+	Closing Error: 0.08381386440137123
+	Year: 367.67506150760715
+	Year Error(NASA): 2.4330615076071354
+	Periheliom: 147.72425053797423
+	Periheliom Error(NASA): 0.6342505379742249
+
+two_bodies> 
+	Method mod_euler_step
+	Closing Error: 0.020284135563232587
+	Year: 365.2003179673815
+	Year Error(NASA): 0.04168203261849612
+	Periheliom: 147.06963706885708
+	Periheliom Error(NASA): 0.020362931142926755
+
+two_bodies> 
+	Method heum_step
+	Closing Error: 0.020504951954471655
+	Year: 365.20023071081033
+	Year Error(NASA): 0.0417692891896877
+	Periheliom: 147.06960229925187
+	Periheliom Error(NASA): 0.020397700748134184
+
+two_bodies> 
+	Method RK4_step
+	Closing Error: 0.02091759638215969
+	Year: 365.2000676518665
+	Year Error(NASA): 0.0419323481335141
+	Periheliom: 147.069525352274
+	Periheliom Error(NASA): 0.02047464772599028
+

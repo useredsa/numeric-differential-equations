@@ -20,6 +20,20 @@ function RK4_step(f, t::Number, x, len::Number)
     return (k1+2*k2+2*k3+k4)/6
 end
 
+macro define_order(f, ord::Integer)
+    @eval function $f(s::Symbol)
+        if s == :order
+            return $ord
+        end
+        throw(ErrorException("Invalid symbol. Use :order"))
+    end
+end
+
+@define_order(euler_step, 1)
+@define_order(mod_euler_step, 2)
+@define_order(heum_step, 2)
+@define_order(RK4_step, 4)
+
 function fixed_step_ode_solver(
     f,
     t0::Number,

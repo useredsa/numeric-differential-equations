@@ -16,6 +16,13 @@ v0 = [0, -2.001585106]
 target_err = 1e-4
 
 function derivative(t, x)
+    if ndims(x) == 2
+        r = zeros(size(x))
+        for i in 1:size(x, 2)
+            r[:,i] = derivative(t, x[:,i])
+        end
+        return r
+    end
     D1 = ((x[1]+mmoon)*(x[1]+mmoon) + x[2]*x[2])
     D1 *= sqrt(D1)
     D2 = ((x[1]-mearth)*(x[1]-mearth) + x[2]*x[2])

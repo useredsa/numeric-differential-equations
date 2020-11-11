@@ -27,9 +27,9 @@ function mixed_step_ode_solver(
     push!(x, x0)
     i = 1
     for j = 1:maxit
-        xfull = last(x) + method(f, last(t), last(x), step)
-        xhalf = last(x) + method(f, last(t), last(x), step/2)
-        xhalf = xhalf + method(f, last(t)+step/2, xhalf, step/2)
+        aux = last(x) .+ method(f, last(t), last(x), [step, step/2])
+        xfull = aux[:,1]
+        xhalf = aux[:,2] + method(f, last(t)+step/2, aux[:,2], step/2)
 
         err_full = err_estimation(xfull, xhalf, method(:order))
         if err_full < target_err

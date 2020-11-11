@@ -1,23 +1,23 @@
-function euler_step(f, t::Number, x, len::Number)
-    return len*f(t, x)
+function euler_step(f, t::Number, x, len)
+    return len' .* f(t, x)
 end
 
-function mod_euler_step(f, t::Number, x, len::Number)
-    whole_step = len*f(t, x)
-    return (whole_step + len*f(t+len, x+whole_step))/2
+function mod_euler_step(f, t::Number, x, len)
+    whole_step = len' .* f(t, x)
+    return (whole_step + len' .* f(t .+ len, x .+ whole_step))/2
 end
 
-function heum_step(f, t::Number, x, len::Number)
-    whole_step = len*f(t, x)
-    return (whole_step + 3*len*f(t+2/3*len, x+2/3*whole_step))/4
+function heum_step(f, t::Number, x, len)
+    whole_step = len' .* f(t, x)
+    return (whole_step + 3*len' .* f(t .+ 2/3*len, x .+ 2/3*whole_step))/4
 end
 
-function RK4_step(f, t::Number, x, len::Number)
-    k1 = len*f(t, x)
-    k2 = len*f(t+len/2, x+k1/2)
-    k3 = len*f(t+len/2, x+k2/2)
-    k4 = len*f(t+len, x+k3)
-    return (k1+2*k2+2*k3+k4)/6
+function RK4_step(f, t::Number, x, len)
+    k1 = len' .* f(t, x)
+    k2 = len' .* f(t .+ len/2, x .+ k1/2)
+    k3 = len' .* f(t .+ len/2, x .+ k2/2)
+    k4 = len' .* f(t .+ len, x .+ k3)
+    return (k1 + 2*k2 + 2*k3 + k4)/6
 end
 
 macro define_order(f, ord::Integer)

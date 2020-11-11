@@ -56,3 +56,15 @@ function eulermethod(prob::SpringProblem, step, nit)
     return eulermethod(f, prob.t0, [prob.p0; prob.v0], h = step, iter = nit)
 end
 
+function eulermethod_by_approximation(prob::SpringProblem, timelen; error = 1e-3)
+    n = length(prob.p0)
+    function f(t, x)
+        p = x[1:n]
+        v = x[n+1:2*n]
+        return [v; (-prob.k*p -prob.b*v + [prob.A*sin(prob.ω*t)])/prob.m]
+    end
+    
+
+    return eulermethod_by_approximation(f, prob.t0, timelen, [prob.p0; prob.v0]; error = error)
+end
+

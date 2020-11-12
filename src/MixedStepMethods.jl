@@ -18,7 +18,8 @@ function mixed_step_ode_solver(
     max_step::AbstractFloat = 10,
     target_err::AbstractFloat = 0.1,
     step0::AbstractFloat = 1.0,
-    maxit::Integer = 10000
+    maxit::Integer = 10000,
+    debug_dict = nothing
 )
     t = Array{typeof(t0 + step0), 1}()
     x = Array{typeof(x0 + step0*f(t0, x0)), 1}()
@@ -36,6 +37,9 @@ function mixed_step_ode_solver(
             push!(t, last(t)+step)
             push!(x, richardson_extrapolation(xfull, xhalf, method(:order)))
             if stop_cond(t, x)
+                if debug_dict != nothing
+                    debug_dict[:numit] = j
+                end
                 break
             end
         end
@@ -110,7 +114,8 @@ function adaptative_rk_ode_solver(
     max_step::AbstractFloat = 10,
     target_err::AbstractFloat = 0.1,
     step0::AbstractFloat = 1.0,
-    maxit::Integer = 10000
+    maxit::Integer = 10000,
+    debug_dict = nothing
 )
     t = Array{typeof(t0 + step0), 1}()
     x = Array{typeof(x0 + step0*f(t0, x0)), 1}()
@@ -126,6 +131,9 @@ function adaptative_rk_ode_solver(
             push!(t, last(t)+step)
             push!(x, x1)
             if stop_cond(t, x)
+                if debug_dict != nothing
+                    debug_dict[:numit] = j
+                end
                 break
             end
         end

@@ -1,0 +1,12 @@
+arenstorf> 
+	Method: Modified Euler's
+	Step: 5.0e-6
+	Target Error (closing condition): 0.005
+
+	Number of iterations: 6827077
+	Running time: 34.955464285s
+	Time (solution): 34.135385
+	Number of evaluations: 13654154
+	Orbit closed with target tolerance: true
+	Distance from last point to start point: 0.004999014487065091
+	Distance from interpolated closing point to start point: 0.004085755338603447

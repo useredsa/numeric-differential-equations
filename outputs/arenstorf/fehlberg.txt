@@ -1,0 +1,14 @@
+arenstorf> 
+	Method: Felhberg's
+	Min. Step: 1.0e-7
+	Max. Step: 0.1
+	Tolerance: 1.0e-12
+	Target Error (closing condition): 1.0e-5
+
+	Number of iterations: 17913
+	Running time: 1.153759431s
+	Time (solution): 34.130426611328964
+	Number of evaluations: 107478
+	Orbit closed with target tolerance: true
+	Distance from last point to start point: 5.480277784952273e-6
+	Distance from interpolated closing point to start point: 2.79940496650255e-6

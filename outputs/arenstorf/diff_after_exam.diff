@@ -1,0 +1,420 @@
+diff --git a/scripts/arenstorf_exam/arenstorf_euler.jl b/scripts/arenstorf_exam/arenstorf_euler.jl
+index 5d48691..c4d443f 100644
+--- a/scripts/arenstorf_exam/arenstorf_euler.jl
++++ b/scripts/arenstorf_exam/arenstorf_euler.jl
+@@ -5,26 +5,30 @@ using Plots
+ includet("src/InternalArray.jl")
+ includet("src/FixedStepMethods.jl")
+ includet("src/MixedStepMethods.jl")
++includet("src/Interpolation.jl")
+ includet("src/Arenstorf.jl")
+ IArray = InternalArray
+ 
+-target_err = 1e-4
+-stop_time = 20
+-mstep = 1e-5
++const closing_err = 5e-2
++const stop_time = 40
++const mstep = 1e-5
+ 
+-x = fixed_step_ode_solver(
++x, time = @timed fixed_step_ode_solver(
+     Arenstorf.derivative,
+     0,
+     [Arenstorf.p0; Arenstorf.v0],
+     (t, x) ->
+-        t > 5 && norm(Arenstorf.p0 .- last(x)[1:2]) < target_err*t || t > stop_time,
++        t > 20 && norm(Arenstorf.p0 .- last(x)[1:2]) < closing_err || t > stop_time,
+     step = mstep,
+-    maxit = 5*10^6,
++    maxit = 10^7,
+     method = euler_step,
+ )
+ 
+ p = Arenstorf.init_plot()
+-inds = 1:length(x)÷200:length(x)
++inds = [i for i in 1:length(x)÷200:length(x)]
++if last(inds) != length(x)
++    push!(inds, length(x))
++end
+ plot!(
+     IArray(x[inds], 1),
+     IArray(x[inds], 2),
+@@ -34,17 +38,24 @@ plot!(
+ savefig("media/arenstorf/euler.png")
+ 
+ begin
+-    print("\033[32;1mtwo_bodies>\033[0m \n")
++    print("\033[32;1marenstorf>\033[0m \n")
+     print("\tMethod: Euler's\n")
+     print("\tStep: $(mstep)\n")
+-    print("\tTarget Error (closing condition): $(target_err)\n")
++    print("\tTarget Error (closing condition): $(closing_err)\n")
+     println()
+     numit = length(x)-1
+     print("\tNumber of iterations: $(numit)\n")
++    print("\tRunning time: $(time)s\n")
+     print("\tTime (solution): $(numit*mstep)\n")
+     print("\tNumber of evaluations: $(numit)\n")
+     print("\tOrbit closed with target tolerance: $(numit*mstep < stop_time)\n")
+     print("\tDistance from last point to start point: ",
+-          "$(norm(norm(last(x)[1:2] .- Arenstorf.p0)/(mstep*numit)))\n")
++          "$(norm(last(x)[1:2] .- Arenstorf.p0))\n")
++    n = length(x)
++    last5x = [p[1] for p in x[n-4:n]]
++    last5y = [p[2] for p in x[n-4:n]]
++    closingx = Interpolation.hermite(last5y, last5x, 0)
++    print("\tDistance from interpolated closing point to start point: ",
++          "$(abs(closingx - Arenstorf.p0[1]))\n")
+ end
+ 
+diff --git a/scripts/arenstorf_exam/arenstorf_fehlberg.jl b/scripts/arenstorf_exam/arenstorf_fehlberg.jl
+index 5fd07a8..8d35f38 100644
+--- a/scripts/arenstorf_exam/arenstorf_fehlberg.jl
++++ b/scripts/arenstorf_exam/arenstorf_fehlberg.jl
+@@ -5,17 +5,18 @@ using Plots
+ includet("src/InternalArray.jl")
+ includet("src/FixedStepMethods.jl")
+ includet("src/MixedStepMethods.jl")
++includet("src/Interpolation.jl")
+ includet("src/Arenstorf.jl")
+ IArray = InternalArray
+ 
+-target_err = 1e-12
+-closing_err = 1e-5
+-stop_time = 40
+-min_step = 1e-7
+-max_step = 0.1
++const target_err = 1e-12
++const closing_err = 1e-5
++const stop_time = 40
++const min_step = 1e-7
++const max_step = 0.1
+ extra_info = Dict()
+ 
+-t, x = adaptative_rk_ode_solver(
++(t, x), time = @timed adaptative_rk_ode_solver(
+     Arenstorf.derivative,
+     0,
+     [Arenstorf.p0; Arenstorf.v0],
+@@ -27,7 +28,7 @@ t, x = adaptative_rk_ode_solver(
+     tableau = RKFehlberg_tableau,
+     maxit = 5*10^6,
+     debug_dict = extra_info
+-);
++)
+ 
+ steps = [t[i]-t[i-1] for i in 2:length(t)]
+ 
+@@ -49,19 +50,26 @@ plot(p1, p2)
+ savefig("media/arenstorf/fehlberg.png")
+ 
+ begin
+-    print("\033[32;1mtwo_bodies>\033[0m \n")
++    print("\033[32;1marenstorf>\033[0m \n")
+     print("\tMethod: Felhberg's\n")
+     print("\tMin. Step: $(min_step)\n")
+     print("\tMax. Step: $(max_step)\n")
+-    print("\tTarget Error (closing condition): $(target_err)\n")
++    print("\tTarget Error (closing condition): $(closing_err)\n")
+     println()
+     numit = extra_info[:numit]
+     print("\tNumber of iterations: $(numit)\n")
++    print("\tRunning time: $(time)s\n")
+     print("\tTime (solution): $(last(t))\n")
+     print("\tNumber of evaluations: $(6*numit)\n")
+     print("\tOrbit closed with target tolerance: $(last(t) < stop_time)\n")
+     print("\tDistance from last point to start point: ",
+-          "$(norm(norm(last(x)[1:2] .- Arenstorf.p0)/last(t)))\n")
++          "$(norm(last(x)[1:2] .- Arenstorf.p0))\n")
++    n = length(x)
++    last5x = [p[1] for p in x[n-4:n]]
++    last5y = [p[2] for p in x[n-4:n]]
++    closingx = Interpolation.hermite(last5y, last5x, 0)
++    print("\tDistance from interpolated closing point to start point: ",
++          "$(abs(closingx - Arenstorf.p0[1]))\n")
+ end
+ 
+ 
+@@ -69,12 +77,8 @@ end
+ 
+ using IJulia
+ 
+-px = [x[i][1] for i in 1:length(x)]
+-py = [x[i][2] for i in 1:length(x)]
++len = length(t)÷2
+ p1 = plot(
+-    label = ["moon", "satellite"],
+-    color = :black,
+-    style = [:dot, :dash],
+     title = "Arenstorf orbit",
+     aspect_ratio = :equal,
+     framestyle = :box,
+@@ -82,26 +86,25 @@ p1 = plot(
+     ylims = (-1.2, 1.2),
+     legend = :bottomright,
+ )
++plot!(p1, [x[1][1]], [x[1][2]], label = "satellite", style = :auto)
++plot!(p1, [cos(0)], [sin(0)], color = :black, label = "moon")
+ scatter!((0, 0), label = "", color = :black, markersize = 1.5)
+-plot!(p1, [px[1]], [py[1]], style = :dash, label = "satellite")
+-plot!(p1, [cos(0)], [sin(0)], style = :dot, label = "moon")
+ p2 = plot(
+     title = "Variation of step",
+-    xlims = (0, last(t)),
+-    ylims = (0, 0.007),
++    xlims = (0, t[len]),
++    ylims = (0, maximum(steps[1:len-1])*1.2),
+     legend = :bottomright,
+ )
+-plot!(p2, [0], [1], label = "step size")
+-    
+-    
++plot!(p2, [0], [0], label = "step size", style = :auto)
++
++
+ anim = Animation()
+ i = 2
+-len = length(t)÷2
+ for j = 0:0.05:t[len]
+     while i < len && t[i] < j
+         i += 1
+     end
+-    push!(p1, [(cos(2*π*t[i]/t[len]), sin(2*π*t[i]/t[len])), (px[i], py[i])])
++    push!(p1, [(x[i][1], x[i][2]), (cos(2*π*t[i]/t[len]), sin(2*π*t[i]/t[len])), (NaN, NaN)])
+     push!(p2, t[i], steps[i-1])
+     plot(p1, p2)
+     frame(anim)
+diff --git a/scripts/arenstorf_exam/arenstorf_mod_euler.jl b/scripts/arenstorf_exam/arenstorf_mod_euler.jl
+index a6eca9d..2b13462 100644
+--- a/scripts/arenstorf_exam/arenstorf_mod_euler.jl
++++ b/scripts/arenstorf_exam/arenstorf_mod_euler.jl
+@@ -5,19 +5,20 @@ using Plots
+ includet("src/InternalArray.jl")
+ includet("src/FixedStepMethods.jl")
+ includet("src/MixedStepMethods.jl")
++includet("src/Interpolation.jl")
+ includet("src/Arenstorf.jl")
+ IArray = InternalArray
+ 
+-target_err = 5e-4
+-stop_time = 40
+-mstep = 5e-6
++const closing_err = 5e-3
++const stop_time = 40
++const mstep = 5e-6
+ 
+-x = fixed_step_ode_solver(
++x, time = @timed fixed_step_ode_solver(
+     Arenstorf.derivative,
+     0,
+     [Arenstorf.p0; Arenstorf.v0],
+     (t, x) ->
+-        t > 20 && norm(Arenstorf.p0 .- last(x)[1:2]) < target_err*t || t > stop_time,
++        t > 20 && norm(Arenstorf.p0 .- last(x)[1:2]) < closing_err || t > stop_time,
+     step = mstep,
+     maxit = 10^7,
+     method = mod_euler_step,
+@@ -37,17 +38,24 @@ plot!(
+ savefig("media/arenstorf/mod_euler.png")
+ 
+ begin
+-    print("\033[32;1mtwo_bodies>\033[0m \n")
++    print("\033[32;1marenstorf>\033[0m \n")
+     print("\tMethod: Modified Euler's\n")
+     print("\tStep: $(mstep)\n")
+-    print("\tTarget Error (closing condition): $(target_err)\n")
++    print("\tTarget Error (closing condition): $(closing_err)\n")
+     println()
+     numit = length(x)-1
+     print("\tNumber of iterations: $(numit)\n")
++    print("\tRunning time: $(time)s\n")
+     print("\tTime (solution): $(numit*mstep)\n")
+     print("\tNumber of evaluations: $(2*numit)\n")
+     print("\tOrbit closed with target tolerance: $(numit*mstep < stop_time)\n")
+     print("\tDistance from last point to start point: ",
+-          "$(norm(norm(last(x)[1:2] .- Arenstorf.p0)/(mstep*numit)))\n")
++          "$(norm(last(x)[1:2] .- Arenstorf.p0))\n")
++    n = length(x)
++    last5x = [p[1] for p in x[n-4:n]]
++    last5y = [p[2] for p in x[n-4:n]]
++    closingx = Interpolation.hermite(last5y, last5x, 0)
++    print("\tDistance from interpolated closing point to start point: ",
++          "$(abs(closingx - Arenstorf.p0[1]))\n")
+ end
+ 
+diff --git a/scripts/arenstorf_exam/arenstorf_richardson.jl b/scripts/arenstorf_exam/arenstorf_richardson.jl
+index b674f7c..bd1ad51 100644
+--- a/scripts/arenstorf_exam/arenstorf_richardson.jl
++++ b/scripts/arenstorf_exam/arenstorf_richardson.jl
+@@ -5,17 +5,18 @@ using Plots
+ includet("src/InternalArray.jl")
+ includet("src/FixedStepMethods.jl")
+ includet("src/MixedStepMethods.jl")
++includet("src/Interpolation.jl")
+ includet("src/Arenstorf.jl")
+ IArray = InternalArray
+ 
+-target_err = 1e-10
+-closing_err = 1e-5
+-stop_time = 40
+-min_step = 1e-7
+-max_step = 0.1
++const target_err = 1e-10
++const closing_err = 1e-5
++const stop_time = 40
++const min_step = 1e-7
++const max_step = 1.0
+ extra_info = Dict()
+ 
+-t, x = mixed_step_ode_solver(
++(t, x), time = @timed mixed_step_ode_solver(
+     Arenstorf.vderivative,
+     0,
+     [Arenstorf.p0; Arenstorf.v0],
+@@ -27,7 +28,7 @@ t, x = mixed_step_ode_solver(
+     method = RK4_step,
+     maxit = 5*10^6,
+     debug_dict = extra_info
+-);
++)
+ 
+ steps = [t[i]-t[i-1] for i in 2:length(t)]
+ 
+@@ -49,31 +50,34 @@ plot(p1, p2)
+ savefig("media/arenstorf/richardson.png")
+ 
+ begin
+-    print("\033[32;1mtwo_bodies>\033[0m \n")
++    print("\033[32;1marenstorf>\033[0m \n")
+     print("\tMethod: Richardson of RK4\n")
+     print("\tMin. Step: $(min_step)\n")
+     print("\tMax. Step: $(max_step)\n")
+-    print("\tTarget Error (closing condition): $(target_err)\n")
++    print("\tTarget Error (closing condition): $(closing_err)\n")
+     println()
+     numit = extra_info[:numit]
+     print("\tNumber of iterations: $(numit)\n")
++    print("\tRunning time: $(time)s\n")
+     print("\tTime (solution): $(last(t))\n")
+     print("\tNumber of evaluations: $(11*numit)\n")
+     print("\tOrbit closed with target tolerance: $(last(t) < stop_time)\n")
+     print("\tDistance from last point to start point: ",
+-          "$(norm(norm(last(x)[1:2] .- Arenstorf.p0)/last(t)))\n")
++          "$(norm(last(x)[1:2] .- Arenstorf.p0))\n")
++    n = length(x)
++    last5x = [p[1] for p in x[n-4:n]]
++    last5y = [p[2] for p in x[n-4:n]]
++    closingx = Interpolation.hermite(last5y, last5x, 0)
++    print("\tDistance from interpolated closing point to start point: ",
++          "$(abs(closingx - Arenstorf.p0[1]))\n")
+ end
+ 
+ # Creation of Gif
+ 
+ using IJulia
+ 
+-px = [x[i][1] for i in 1:length(x)]
+-py = [x[i][2] for i in 1:length(x)]
++len = length(t)÷2
+ p1 = plot(
+-    label = ["moon", "satellite"],
+-    color = :black,
+-    style = [:dot, :dash],
+     title = "Arenstorf orbit",
+     aspect_ratio = :equal,
+     framestyle = :box,
+@@ -81,26 +85,25 @@ p1 = plot(
+     ylims = (-1.2, 1.2),
+     legend = :bottomright,
+ )
++plot!(p1, [x[1][1]], [x[1][2]], label = "satellite")
++plot!(p1, [cos(0)], [sin(0)], color = :black, label = "moon")
+ scatter!((0, 0), label = "", color = :black, markersize = 1.5)
+-plot!(p1, [px[1]], [py[1]], style = :dash, label = "satellite")
+-plot!(p1, [cos(0)], [sin(0)], style = :dot, label = "moon")
+ p2 = plot(
+     title = "Variation of step",
+-    xlims = (0, last(t)),
+-    ylims = (0, 0.012),
++    xlims = (0, t[len]),
++    ylims = (0, maximum(steps[1:len-1])*1.2),
+     legend = :bottomright,
+ )
+-plot!(p2, [0], [1], label = "step size")
+-    
+-    
++plot!(p2, [0], [0], label = "step size")
++
++
+ anim = Animation()
+ i = 2
+-len = length(t)÷2
+ for j = 0:0.05:t[len]
+     while i < len && t[i] < j
+         i += 1
+     end
+-    push!(p1, [(cos(2*π*t[i]/t[len]), sin(2*π*t[i]/t[len])), (px[i], py[i])])
++    push!(p1, [(x[i][1], x[i][2]), (cos(2*π*t[i]/t[len]), sin(2*π*t[i]/t[len])), (NaN, NaN)])
+     push!(p2, t[i], steps[i-1])
+     plot(p1, p2)
+     frame(anim)
+diff --git a/scripts/arenstorf_exam/arenstorf_rk4.jl b/scripts/arenstorf_exam/arenstorf_rk4.jl
+index d369eb7..1800991 100644
+--- a/scripts/arenstorf_exam/arenstorf_rk4.jl
++++ b/scripts/arenstorf_exam/arenstorf_rk4.jl
+@@ -5,19 +5,20 @@ using Plots
+ includet("src/InternalArray.jl")
+ includet("src/FixedStepMethods.jl")
+ includet("src/MixedStepMethods.jl")
++includet("src/Interpolation.jl")
+ includet("src/Arenstorf.jl")
+ IArray = InternalArray
+ 
+-target_err = 5e-6
+-stop_time = 40
+-mstep = 5e-6
++const closing_err = 5e-6
++const stop_time = 40
++const mstep = 1e-5
+ 
+-x = fixed_step_ode_solver(
++x, time = @timed fixed_step_ode_solver(
+     Arenstorf.derivative,
+     0,
+     [Arenstorf.p0; Arenstorf.v0],
+     (t, x) ->
+-        t > 20 && norm(Arenstorf.p0 .- last(x)[1:2]) < target_err*t || t > stop_time,
++        t > 20 && norm(Arenstorf.p0 .- last(x)[1:2]) < closing_err || t > stop_time,
+     step = mstep,
+     maxit = 10^7,
+     method = RK4_step,
+@@ -37,17 +38,24 @@ plot!(
+ savefig("media/arenstorf/rk4.png")
+ 
+ begin
+-    print("\033[32;1mtwo_bodies>\033[0m \n")
++    print("\033[32;1marenstorf>\033[0m \n")
+     print("\tMethod: RK4\n")
+     print("\tStep: $(mstep)\n")
+-    print("\tTarget Error (closing condition): $(target_err)\n")
++    print("\tTarget Error (closing condition): $(closing_err)\n")
+     println()
+     numit = length(x)-1
+     print("\tNumber of iterations: $(numit)\n")
++    print("\tRunning time: $(time)s\n")
+     print("\tTime (solution): $(numit*mstep)\n")
+     print("\tNumber of evaluations: $(4*numit)\n")
+     print("\tOrbit closed with target tolerance: $(numit*mstep < stop_time)\n")
+     print("\tDistance from last point to start point: ",
+-          "$(norm(norm(last(x)[1:2] .- Arenstorf.p0)/(mstep*numit)))\n")
++          "$(norm(last(x)[1:2] .- Arenstorf.p0))\n")
++    n = length(x)
++    last5x = [p[1] for p in x[n-4:n]]
++    last5y = [p[2] for p in x[n-4:n]]
++    closingx = Interpolation.hermite(last5y, last5x, 0)
++    print("\tDistance from interpolated closing point to start point: ",
++          "$(abs(closingx - Arenstorf.p0[1]))\n")
+ end
+ 
+

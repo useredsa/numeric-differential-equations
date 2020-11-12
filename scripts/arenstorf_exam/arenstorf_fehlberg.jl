@@ -5,17 +5,18 @@ using Plots
 includet("src/InternalArray.jl")
 includet("src/FixedStepMethods.jl")
 includet("src/MixedStepMethods.jl")
+includet("src/Interpolation.jl")
 includet("src/Arenstorf.jl")
 IArray = InternalArray
 
-target_err = 1e-12
-closing_err = 1e-5
-stop_time = 40
-min_step = 1e-7
-max_step = 0.1
+const target_err = 1e-12
+const closing_err = 1e-5
+const stop_time = 40
+const min_step = 1e-7
+const max_step = 0.1
 extra_info = Dict()
 
-t, x = adaptative_rk_ode_solver(
+(t, x), time = @timed adaptative_rk_ode_solver(
     Arenstorf.derivative,
     0,
     [Arenstorf.p0; Arenstorf.v0],
@@ -27,7 +28,7 @@ t, x = adaptative_rk_ode_solver(
     tableau = RKFehlberg_tableau,
     maxit = 5*10^6,
     debug_dict = extra_info
-);
+)
 
 steps = [t[i]-t[i-1] for i in 2:length(t)]
 
@@ -49,19 +50,27 @@ plot(p1, p2)
 savefig("media/arenstorf/fehlberg.png")
 
 begin
-    print("\033[32;1mtwo_bodies>\033[0m \n")
+    print("\033[32;1marenstorf>\033[0m \n")
     print("\tMethod: Felhberg's\n")
     print("\tMin. Step: $(min_step)\n")
     print("\tMax. Step: $(max_step)\n")
-    print("\tTarget Error (closing condition): $(target_err)\n")
+    print("\tTolerance: $(target_err)\n")
+    print("\tTarget Error (closing condition): $(closing_err)\n")
     println()
     numit = extra_info[:numit]
     print("\tNumber of iterations: $(numit)\n")
+    print("\tRunning time: $(time)s\n")
     print("\tTime (solution): $(last(t))\n")
     print("\tNumber of evaluations: $(6*numit)\n")
     print("\tOrbit closed with target tolerance: $(last(t) < stop_time)\n")
     print("\tDistance from last point to start point: ",
-          "$(norm(norm(last(x)[1:2] .- Arenstorf.p0)/last(t)))\n")
+          "$(norm(last(x)[1:2] .- Arenstorf.p0))\n")
+    n = length(x)
+    last5x = [p[1] for p in x[n-4:n]]
+    last5y = [p[2] for p in x[n-4:n]]
+    closingx = Interpolation.hermite(last5y, last5x, 0)
+    print("\tDistance from interpolated closing point to start point: ",
+          "$(abs(closingx - Arenstorf.p0[1]))\n")
 end
 
 
@@ -69,12 +78,8 @@ end
 
 using IJulia
 
-px = [x[i][1] for i in 1:length(x)]
-py = [x[i][2] for i in 1:length(x)]
+len = length(t)÷2
 p1 = plot(
-    label = ["moon", "satellite"],
-    color = :black,
-    style = [:dot, :dash],
     title = "Arenstorf orbit",
     aspect_ratio = :equal,
     framestyle = :box,
@@ -82,26 +87,25 @@ p1 = plot(
     ylims = (-1.2, 1.2),
     legend = :bottomright,
 )
+plot!(p1, [x[1][1]], [x[1][2]], label = "satellite", style = :auto)
+plot!(p1, [cos(0)], [sin(0)], color = :black, label = "moon")
 scatter!((0, 0), label = "", color = :black, markersize = 1.5)
-plot!(p1, [px[1]], [py[1]], style = :dash, label = "satellite")
-plot!(p1, [cos(0)], [sin(0)], style = :dot, label = "moon")
 p2 = plot(
     title = "Variation of step",
-    xlims = (0, last(t)),
-    ylims = (0, 0.007),
+    xlims = (0, t[len]),
+    ylims = (0, maximum(steps[1:len-1])*1.2),
     legend = :bottomright,
 )
-plot!(p2, [0], [1], label = "step size")
-    
-    
+plot!(p2, [0], [0], label = "step size", style = :auto)
+
+
 anim = Animation()
 i = 2
-len = length(t)÷2
 for j = 0:0.05:t[len]
     while i < len && t[i] < j
         i += 1
     end
-    push!(p1, [(cos(2*π*t[i]/t[len]), sin(2*π*t[i]/t[len])), (px[i], py[i])])
+    push!(p1, [(x[i][1], x[i][2]), (cos(2*π*t[i]/t[len]), sin(2*π*t[i]/t[len])), (NaN, NaN)])
     push!(p2, t[i], steps[i-1])
     plot(p1, p2)
     frame(anim)

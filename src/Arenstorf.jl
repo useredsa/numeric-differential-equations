@@ -4,10 +4,10 @@ module Arenstorf
 
 using Plots
 
-mmoon = 0.012277471
-mearth = 1-mmoon
-p0 = [0.994, 0]
-v0 = [0, -2.001585106]
+const mmoon = 0.012277471
+const mearth = 1-mmoon
+const p0 = [0.994, 0]
+const v0 = [0, -2.001585106]
 
 function derivative(t, x)
     D1 = ((x[1]+mmoon)*(x[1]+mmoon) + x[2]*x[2])
